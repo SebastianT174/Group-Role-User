@@ -56,7 +56,7 @@ async def get_all_groups():
     result = collection.find()
     return json.loads(dumps(result))
 
-# CREATE ROLES
+# CREATE NEW ROLES
 
 @app.post("/create-new-role")
 async def create_new_role(input: dict):
@@ -68,7 +68,7 @@ async def create_new_role(input: dict):
     with neo4j_client.session() as session:
         session.run("CREATE (r:Role {id: $id})", {"id": str(result.inserted_id)})
 
-# UPDATE ROLES
+# UPDATE ROLES need additional fixes
 
 @app.put("/update-roles")
 async def update_roles(input: dict):
@@ -118,8 +118,24 @@ async def unbind_group_from_role(input: dict):
                     {"group_id": input["group-id"], "role_id": input["role-id"]})
 
 # CREATE NEW USER
+
+@app.post("/create-new-user")
+async def create_new_user(input: dict):
+    db = mongo_client["project"]
+    collection = db["users"]
+
+    result = collection.insert_one(input)
+
+    with neo4j_client.session() as session:
+        session.run("CREATE (u:User {id: $id})", {"id": str(result.inserted_id)})
+
+    with neo4j_client.session() as session:
+        session.run("""
+                    MATCH (g:Group), (r:Role), (u:User) WHERE g.id = $group_id AND r.id = $role_id AND u.id = $id
+                    MERGE (g)-[:OWNS]->(u) MERGE (u)-[:OWNS]->(r)""",
+                    {"group_id": input["group-id"], "role_id": input["role-id"], "id": str(result.inserted_id)}
+                )
+
 # UPDATE USER
 # DELETE USER
 # SHOW ALL USERS
-
-
