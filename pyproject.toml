@@ -8,6 +8,9 @@ packages = [{include = "group_role_user"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
+pymongo = "^4.4.1"
+fastapi = {extras = ["all"], version = "^0.100.0"}
+neo4j = "^5.10.0"
 
 
 [build-system]
