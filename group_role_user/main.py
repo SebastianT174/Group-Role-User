@@ -137,5 +137,35 @@ async def create_new_user(input: dict):
                 )
 
 # UPDATE USER
+
+@app.post("/update-user")
+async def update_user(input: dict):
+    db = mongo_client["project"]
+    collection = db["users"]
+
+    collection.update_one(
+        {"_id": ObjectId(input["id"])}, {"$set": {"firstname": input["firstname"], "lastname": input["lastname"]}}
+        )
+
 # DELETE USER
+
+@app.delete("/delete-user")
+async def delete_user(input: dict):
+    db = mongo_client["project"]
+    collection = db["users"]
+
+    collection.delete_one({"_id": ObjectId(input["id"])})
+
+    with neo4j_client.session() as session:
+        session.run("MATCH (u:User) WHERE u.id = $id DETACH DELETE u", {"id": input["id"]})
+
 # SHOW ALL USERS
+
+@app.get("/show-all-users")
+async def show_all_users():
+    db = mongo_client["project"]
+    collection = db["users"]
+
+    result = collection.find()
+
+    return json.loads(dumps(result))
